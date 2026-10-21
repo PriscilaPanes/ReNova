@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReNova - Reutilización de Materiales y Oficios</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- Header / Nav -->
+  <header class="bg-emerald-800 text-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="switchTab('catalogo')">
+        <div class="bg-emerald-600 p-2 rounded-lg text-white">
+          <i class="fa-solid fa-recycle text-xl"></i>
+        </div>
+        <div>
+          <span class="font-bold text-lg tracking-tight block leading-none">ReNova</span>
+          <span class="text-xs text-emerald-200">Eco-Construcción & Oficios</span>
+        </div>
+      </div>
+
+      <!-- Desktop Nav -->
+      <nav class="hidden md:flex space-x-1">
+        <button onclick="switchTab('catalogo')" id="nav-catalogo" class="nav-btn px-4 py-2 rounded-md font-medium text-sm transition-colors bg-emerald-700 text-white">
+          <i class="fa-solid fa-boxes-stacked mr-1.5"></i> Catálogo
+        </button>
+        <button onclick="switchTab('publicar')" id="nav-publicar" class="nav-btn px-4 py-2 rounded-md font-medium text-sm transition-colors hover:bg-emerald-700/50">
+          <i class="fa-solid fa-plus-circle mr-1.5"></i> Publicar Material
+        </button>
+        <button onclick="switchTab('maestros')" id="nav-maestros" class="nav-btn px-4 py-2 rounded-md font-medium text-sm transition-colors hover:bg-emerald-700/50">
+          <i class="fa-solid fa-user-group mr-1.5"></i> Red de Oficios
+        </button>
+        <button onclick="switchTab('calculadora')" id="nav-calculadora" class="nav-btn px-4 py-2 rounded-md font-medium text-sm transition-colors hover:bg-emerald-700/50 bg-emerald-900/60 border border-emerald-500/40">
+          <i class="fa-solid fa-calculator mr-1.5 text-emerald-300"></i> Modelo de Negocio
+        </button>
+      </nav>
+
+      <!-- Mobile Hamburger Button -->
+      <button onclick="toggleMobileMenu()" class="md:hidden p-2 text-white hover:bg-emerald-700 rounded-lg">
+        <i class="fa-solid fa-bars text-xl"></i>
+      </button>
+    </div>
+
+    <!-- Mobile Drawer Menu -->
+    <div id="mobile-menu" class="hidden md:hidden bg-emerald-900 border-t border-emerald-700 px-4 py-3 space-y-2">
+      <button onclick="switchTab('catalogo'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-emerald-800">
+        <i class="fa-solid fa-boxes-stacked w-6"></i> Catálogo
+      </button>
+      <button onclick="switchTab('publicar'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-emerald-800">
+        <i class="fa-solid fa-plus-circle w-6"></i> Publicar Material
+      </button>
+      <button onclick="switchTab('maestros'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-emerald-800">
+        <i class="fa-solid fa-user-group w-6"></i> Red de Oficios
+      </button>
+      <button onclick="switchTab('calculadora'); toggleMobileMenu()" class="w-full text-left px-3 py-2 rounded text-sm font-medium hover:bg-emerald-800 text-emerald-300">
+        <i class="fa-solid fa-calculator w-6"></i> Modelo de Negocio (Calculadora)
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 py-6 flex-grow w-full">
+
+    <!-- TAB 1: CATÁLOGO DE MATERIALES -->
+    <section id="tab-catalogo" class="tab-content active">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div>
+          <h1 class="text-2xl font-bold text-slate-800">Catálogo de Materiales Reutilizables</h1>
+          <p class="text-slate-600 text-sm">Encuentra excedentes de construcción de calidad a precios accesibles.</p>
+        </div>
+        <div class="flex items-center bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-1.5 rounded-lg text-sm">
+          <i class="fa-solid fa-leaf text-emerald-600 mr-2"></i>
+          <span>Ahorro ecológico total acumulado: <strong id="co2-total">142 kg CO₂</strong></span>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div>
+          <label class="text-xs font-semibold text-slate-500 uppercase block mb-1">Buscar</label>
+          <input type="text" id="filter-search" oninput="renderCatalogo()" placeholder="Ej. Cerámicas, Madera..." class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 uppercase block mb-1">Categoría</label>
+          <select id="filter-cat" onchange="renderCatalogo()" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="all">Todas las categorías</option>
+            <option value="Madera">Madera</option>
+            <option value="Cerámica/Pisos">Cerámica/Pisos</option>
+            <option value="Pinturas">Pinturas</option>
+            <option value="Sanitarios/Tuberías">Sanitarios/Tuberías</option>
+            <option value="Metales/Perfiles">Metales/Perfiles</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-xs font-semibold text-slate-500 uppercase block mb-1">Estado</label>
+          <select id="filter-estado" onchange="renderCatalogo()" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            <option value="all">Todos los estados</option>
+            <option value="Nuevo">Nuevo (Sobrante)</option>
+            <option value="Seminuevo">Seminuevo</option>
+            <option value="Usado/Buen estado">Usado (Buen estado)</option>
+          </select>
+        </div>
+        <div class="flex items-end">
+          <button onclick="resetFilters()" class="w-full bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium py-2 px-3 rounded-lg text-sm transition-colors">
+            <i class="fa-solid fa-rotate-left mr-1"></i> Limpiar Filtros
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid de Materiales -->
+      <div id="grid-materiales" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Renderizado dinámicamente vía JS -->
+      </div>
+    </section>
+
+
+    <!-- TAB 2: PUBLICAR MATERIAL -->
+    <section id="tab-publicar" class="tab-content">
+      <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <h2 class="text-xl font-bold text-slate-800 mb-1">Publicar Material o Excedente</h2>
+        <p class="text-sm text-slate-600 mb-6">Regístralo para venderlo o donarlo a personas de tu comunidad.</p>
+
+        <form id="form-publicar" onsubmit="guardarMaterial(event)" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Título de la publicación</label>
+            <input type="text" id="pub-titulo" required placeholder="Ej: 5 Cajas de Porcelanato Gris 60x60" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Categoría</label>
+              <select id="pub-cat" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="Madera">Madera</option>
+                <option value="Cerámica/Pisos">Cerámica/Pisos</option>
+                <option value="Pinturas">Pinturas</option>
+                <option value="Sanitarios/Tuberías">Sanitarios/Tuberías</option>
+                <option value="Metales/Perfiles">Metales/Perfiles</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Estado del material</label>
+              <select id="pub-estado" required class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                <option value="Nuevo">Nuevo (Sobrante de obra)</option>
+                <option value="Seminuevo">Seminuevo</option>
+                <option value="Usado/Buen estado">Usado (Buen estado)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Precio ($ CLP)</label>
+              <input type="number" id="pub-precio" required min="0" placeholder="Ej: 25000 (0 para donación)" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-700 mb-1">Ubicación / Sector</label>
+              <input type="text" id="pub-ubicacion" required placeholder="Ej: Temuco, Centro" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">Descripción detallada</label>
+            <textarea id="pub-desc" rows="3" required placeholder="Indica dimensiones, cantidad, detalles de conservación..." class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+          </div>
+
+          <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg text-sm transition-colors">
+            <i class="fa-solid fa-paper-plane mr-2"></i> Publicar en el Catálogo
+          </button>
+        </form>
+      </div>
+    </section>
+
+
+    <!-- TAB 3: RED DE OFICIOS -->
+    <section id="tab-maestros" class="tab-content">
+      <div class="mb-6">
+        <h1 class="text-2xl font-bold text-slate-800">Red de Trabajadores de Oficios</h1>
+        <p class="text-slate-600 text-sm">Conecta con maestros calificados para realizar instalaciones o reparaciones en tu hogar.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Lista de Maestros -->
+        <div id="lista-maestros" class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Renderizado dinámicamente -->
+        </div>
+
+        <!-- Formulario de Solicitud de Cotización -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 h-fit sticky top-20">
+          <h3 class="font-bold text-slate-800 text-lg mb-2">Solicitar Presupuesto</h3>
+          <p class="text-xs text-slate-500 mb-4">Selecciona un profesional y describe el trabajo requerido.</p>
+
+          <form id="form-cotizacion" onsubmit="enviarCotizacion(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Maestro seleccionado</label>
+              <select id="cot-maestro" required class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                <!-- Opciones dinámicas -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Tu Nombre</label>
+              <input type="text" id="cot-nombre" required placeholder="Tu nombre completo" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Teléfono / WhatsApp</label>
+              <input type="tel" id="cot-telefono" required placeholder="+56 9 1234 5678" class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Detalle del trabajo</label>
+              <textarea id="cot-detalle" rows="3" required placeholder="Ej: Necesito instalar 20m² de piso cerámico en living..." class="w-full px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">
+              Enviar Solicitud
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- TAB 4: CALCULADORA DE MODELO DE NEGOCIO -->
+    <section id="tab-calculadora" class="tab-content">
+      <div class="mb-6">
+        <div class="flex items-center space-x-2">
+          <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded uppercase tracking-wide">Módulo Económico</span>
+          <h1 class="text-2xl font-bold text-slate-800">Simulador de Monetización de la Plataforma</h1>
+        </div>
+        <p class="text-slate-600 text-sm mt-1">Calcula las comisiones e ingresos generados por transacciones, fletes y corretaje de oficios.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <!-- Panel de Parámetros -->
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200 space-y-4">
+          <h3 class="font-bold text-slate-800 border-b pb-2">Parámetros de la Operación</h3>
+          
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor del Material ($ CLP)</label>
+            <input type="number" id="sim-precio" value="35000" oninput="calcularSimulacion()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none font-semibold">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Distancia del Flete (Km)</label>
+            <input type="number" id="sim-km" value="12" oninput="calcularSimulacion()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">% Comisión por Venta Material</label>
+            <input type="number" id="sim-comision-pct" value="8" oninput="calcularSimulacion()" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+          </div>
+
+          <div class="pt-2">
+            <label class="inline-flex items-center">
+              <input type="checkbox" id="sim-include-maestro" onchange="calcularSimulacion()" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4">
+              <span class="ml-2 text-sm text-slate-700">Incluye servicio de Maestro ($50.000)</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Desglose de Resultados -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+          <h3 class="font-bold text-slate-800 border-b pb-2 mb-4">Desglose Financiero de la Transacción</h3>
+
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+              <span class="text-xs text-slate-500 block">Total a Pagar Comprador</span>
+              <span id="res-total-comprador" class="text-xl font-bold text-slate-800">$0</span>
+            </div>
+            <div class="bg-emerald-50 p-3 rounded-lg border border-emerald-200">
+              <span class="text-xs text-emerald-700 block">Ingreso para la Plataforma</span>
+              <span id="res-ganancia-plataforma" class="text-xl font-bold text-emerald-700">$0</span>
+            </div>
+            <div class="bg-blue-50 p-3 rounded-lg border border-blue-200">
+              <span class="text-xs text-blue-700 block">Neto para Vendedor/Flete</span>
+              <span id="res-neto-vendedor" class="text-xl font-bold text-blue-800">$0</span>
+            </div>
+          </div>
+
+          <!-- Tabla explicativa -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+              <thead class="text-xs text-slate-500 uppercase bg-slate-50">
+                <tr>
+                  <th class="py-2 px-3">Concepto</th>
+                  <th class="py-2 px-3 text-right">Monto</th>
+                  <th class="py-2 px-3 text-right">Comisión Segunda Vida</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-100">
+                <tr>
+                  <td class="py-2 px-3 font-medium">Venta de Material</td>
+                  <td id="row-material-val" class="py-2 px-3 text-right">$0</td>
+                  <td id="row-material-com" class="py-2 px-3 text-right text-emerald-600 font-semibold">$0</td>
+                </tr>
+                <tr>
+                  <td class="py-2 px-3 font-medium">Servicio de Flete Local</td>
+                  <td id="row-flete-val" class="py-2 px-3 text-right">$0</td>
+                  <td id="row-flete-com" class="py-2 px-3 text-right text-emerald-600 font-semibold">$0</td>
+                </tr>
+                <tr id="row-maestro-tr" class="hidden">
+                  <td class="py-2 px-3 font-medium">Mano de Obra Maestro</td>
+                  <td id="row-maestro-val" class="py-2 px-3 text-right">$0</td>
+                  <td id="row-maestro-com" class="py-2 px-3 text-right text-emerald-600 font-semibold">$0</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Proyección MRR -->
+      <div class="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+        <h3 class="font-bold text-slate-800 mb-1">Proyección de Ingresos Mensuales Estimada (MRR)</h3>
+        <p class="text-xs text-slate-500 mb-4">Escenario basado en actividad de la comunidad local.</p>
+
+        <div class="h-64 relative">
+          <canvas id="chart-monetizacion"></canvas>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-4 right-4 bg-slate-900 text-white px-4 py-3 rounded-lg shadow-lg hidden transition-opacity">
+    <span id="toast-msg">Notificación</span>
+  </div>
+
+  <script>
+    // ESTADO DE LA APLICACIÓN
+    let materiales = [
+      { id: 1, titulo: '12 Sacos de Cemento Biobío', cat: 'Cerámica/Pisos', precio: 35000, estado: 'Nuevo', ubicacion: 'Temuco, Centro', desc: 'Sobrante de ampliación. Sacos en perfecto estado y sellados.', co2: 24, img: 'fa-cubes' },
+      { id: 2, titulo: 'Vigas de Roble 2x4 (6 unidades)', cat: 'Madera', precio: 45000, estado: 'Seminuevo', ubicacion: 'Padre Las Casas', desc: 'Madera cepillada, seca, lista para techar o estructura.', co2: 18, img: 'fa-tree' },
+      { id: 3, titulo: '3 Tineta Pintura Esmalte al Agua Blanco', cat: 'Pinturas', precio: 28000, estado: 'Nuevo', ubicacion: 'Temuco, Labranza', desc: 'Tinetas sin abrir de 5 galones cada una.', co2: 12, img: 'fa-paint-roller' }
+    ];
+
+    let maestros = [
+      { id: 1, nombre: 'Juan Pérez', oficio: 'Carpintero y Mueblista', exp: '12 años', expVal: 5, fono: '+56 9 8765 4321' },
+      { id: 2, nombre: 'Carlos Silva', oficio: 'Gasfíter e Instalador', exp: '8 años', expVal: 4.8, fono: '+56 9 1122 3344' },
+      { id: 3, nombre: 'Roberto Araya', oficio: 'Albañil y Maestro Mayor', exp: '15 años', expVal: 4.9, fono: '+56 9 5566 7788' }
+    ];
+
+    let chartInstance = null;
+
+    // INICIALIZACIÓN
+    document.addEventListener('DOMContentLoaded', () => {
+      cargarLocalStorage();
+      renderCatalogo();
+      renderMaestros();
+      calcularSimulacion();
+      initChart();
+    });
+
+    // PESTAÑAS
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => {
+        b.classList.remove('bg-emerald-700', 'text-white');
+        b.classList.add('hover:bg-emerald-700/50');
+      });
+
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if(activeNav) {
+        activeNav.classList.add('bg-emerald-700', 'text-white');
+      }
+    }
+
+    function toggleMobileMenu() {
+      const menu = document.getElementById('mobile-menu');
+      menu.classList.toggle('hidden');
+    }
+
+    // CATÁLOGO
+    function renderCatalogo() {
+      const grid = document.getElementById('grid-materiales');
+      const search = document.getElementById('filter-search').value.toLowerCase();
+      const cat = document.getElementById('filter-cat').value;
+      const estado = document.getElementById('filter-estado').value;
+
+      const filtered = materiales.filter(m => {
+        const matchSearch = m.titulo.toLowerCase().includes(search) || m.desc.toLowerCase().includes(search);
+        const matchCat = cat === 'all' || m.cat === cat;
+        const matchEstado = estado === 'all' || m.estado === estado;
+        return matchSearch && matchCat && matchEstado;
+      });
+
+      grid.innerHTML = filtered.map(m => `
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div class="p-5">
+            <div class="flex items-start justify-between mb-2">
+              <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-0.5 rounded">${m.cat}</span>
+              <span class="text-xs text-slate-500"><i class="fa-solid fa-location-dot mr-1"></i>${m.ubicacion}</span>
+            </div>
+            <h3 class="font-bold text-slate-800 text-lg mb-1">${m.titulo}</h3>
+            <p class="text-slate-600 text-xs mb-3 line-clamp-2">${m.desc}</p>
+            <div class="flex items-center text-xs text-emerald-600 bg-emerald-50 p-2 rounded mb-3">
+              <i class="fa-solid fa-seedling mr-1.5"></i>
+              <span>Evita aprox. <strong>${m.co2} kg de CO₂</strong></span>
+            </div>
+          </div>
+          <div class="bg-slate-50 px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+            <div>
+              <span class="text-xs text-slate-500 block">Precio</span>
+              <span class="text-lg font-bold text-slate-900">${m.precio > 0 ? '$' + m.precio.toLocaleString('es-CL') : 'Gratis / Donación'}</span>
+            </div>
+            <button onclick="prefillCalculadora(${m.precio})" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-lg transition-colors flex items-center">
+              <i class="fa-solid fa-calculator mr-1"></i> Simular
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function resetFilters() {
+      document.getElementById('filter-search').value = '';
+      document.getElementById('filter-cat').value = 'all';
+      document.getElementById('filter-estado').value = 'all';
+      renderCatalogo();
+    }
+
+    // PUBLICAR
+    function guardarMaterial(e) {
+      e.preventDefault();
+      const nuevo = {
+        id: Date.now(),
+        titulo: document.getElementById('pub-titulo').value,
+        cat: document.getElementById('pub-cat').value,
+        estado: document.getElementById('pub-estado').value,
+        precio: parseInt(document.getElementById('pub-precio').value) || 0,
+        ubicacion: document.getElementById('pub-ubicacion').value,
+        desc: document.getElementById('pub-desc').value,
+        co2: Math.floor(Math.random() * 15) + 5
+      };
+
+      materiales.unshift(nuevo);
+      guardarLocalStorage();
+      document.getElementById('form-publicar').reset();
+      showToast('Material publicado exitosamente');
+      switchTab('catalogo');
+      renderCatalogo();
+    }
+
+    // MAESTROS
+    function renderMaestros() {
+      const container = document.getElementById('lista-maestros');
+      const select = document.getElementById('cot-maestro');
+
+      container.innerHTML = maestros.map(m => `
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+          <div class="flex items-center space-x-3 mb-2">
+            <div class="bg-slate-100 text-slate-600 p-3 rounded-full">
+              <i class="fa-solid fa-user-gear text-lg"></i>
+            </div>
+            <div>
+              <h4 class="font-bold text-slate-800 text-sm">${m.nombre}</h4>
+              <span class="text-xs text-emerald-700 font-medium block">${m.oficio}</span>
+            </div>
+          </div>
+          <div class="text-xs text-slate-500 space-y-1 mb-3">
+            <div><i class="fa-solid fa-briefcase mr-1"></i> Experiencia: ${m.exp}</div>
+            <div><i class="fa-solid fa-star text-amber-400 mr-1"></i> Evaluación: ${m.expVal} / 5.0</div>
+          </div>
+        </div>
+      `).join('');
+
+      select.innerHTML = maestros.map(m => `<option value="${m.nombre}">${m.nombre} - ${m.oficio}</option>`).join('');
+    }
+
+    function enviarCotizacion(e) {
+      e.preventDefault();
+      showToast('Solicitud enviada al maestro correctamente');
+      document.getElementById('form-cotizacion').reset();
+    }
+
+    // SIMULADOR ECONÓMICO
+    function prefillCalculadora(precio) {
+      document.getElementById('sim-precio').value = precio;
+      switchTab('calculadora');
+      calcularSimulacion();
+    }
+
+    function calcularSimulacion() {
+      const precioMaterial = parseFloat(document.getElementById('sim-precio').value) || 0;
+      const km = parseFloat(document.getElementById('sim-km').value) || 0;
+      const pct = parseFloat(document.getElementById('sim-comision-pct').value) || 0;
+      const incMaestro = document.getElementById('sim-include-maestro').checked;
+
+      // Cálculos
+      const comisionMaterial = precioMaterial * (pct / 100);
+      const costoFleteBase = 8000 + (km * 450);
+      const comisionFlete = costoFleteBase * 0.10;
+      const manoObra = incMaestro ? 50000 : 0;
+      const comisionMaestro = incMaestro ? 50000 * 0.05 : 0;
+
+      const totalGananciaPlataforma = comisionMaterial + comisionFlete + comisionMaestro;
+      const totalComprador = precioMaterial + costoFleteBase + manoObra;
+      const netoVendedorFlete = totalComprador - totalGananciaPlataforma;
+
+      // Render
+      document.getElementById('res-total-comprador').innerText = '$' + Math.round(totalComprador).toLocaleString('es-CL');
+      document.getElementById('res-ganancia-plataforma').innerText = '$' + Math.round(totalGananciaPlataforma).toLocaleString('es-CL');
+      document.getElementById('res-neto-vendedor').innerText = '$' + Math.round(netoVendedorFlete).toLocaleString('es-CL');
+
+      document.getElementById('row-material-val').innerText = '$' + precioMaterial.toLocaleString('es-CL');
+      document.getElementById('row-material-com').innerText = '$' + Math.round(comisionMaterial).toLocaleString('es-CL');
+
+      document.getElementById('row-flete-val').innerText = '$' + Math.round(costoFleteBase).toLocaleString('es-CL');
+      document.getElementById('row-flete-com').innerText = '$' + Math.round(comisionFlete).toLocaleString('es-CL');
+
+      const maestroRow = document.getElementById('row-maestro-tr');
+      if(incMaestro) {
+        maestroRow.classList.remove('hidden');
+        document.getElementById('row-maestro-val').innerText = '$' + manoObra.toLocaleString('es-CL');
+        document.getElementById('row-maestro-com').innerText = '$' + Math.round(comisionMaestro).toLocaleString('es-CL');
+      } else {
+        maestroRow.classList.add('hidden');
+      }
+    }
+
+    function initChart() {
+      const ctx = document.getElementById('chart-monetizacion').getContext('2d');
+      chartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: ['Mes 1', 'Mes 2', 'Mes 3', 'Mes 4', 'Mes 5', 'Mes 6'],
+          datasets: [
+            { label: 'Comisión Materiales', data: [120000, 180000, 290000, 410000, 580000, 750000], backgroundColor: '#10b981' },
+            { label: 'Comisión Fletes', data: [45000, 70000, 110000, 160000, 220000, 310000], backgroundColor: '#0284c7' },
+            { label: 'Membresías B2B', data: [0, 50000, 100000, 150000, 250000, 400000], backgroundColor: '#f59e0b' }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: { x: { stacked: true }, y: { stacked: true } }
+        }
+      });
+    }
+
+    // PERSISTENCIA & TOAST
+    function cargarLocalStorage() {
+      const saved = localStorage.getItem('sv_materiales');
+      if(saved) materiales = JSON.parse(saved);
+    }
+
+    function guardarLocalStorage() {
+      localStorage.setItem('sv_materiales', JSON.stringify(materiales));
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('hidden');
+      setTimeout(() => toast.classList.add('hidden'), 3000);
+    }
+  </script>
+</body>
+</html>
